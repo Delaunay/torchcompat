@@ -24,7 +24,7 @@ torchcompat
    :target: https://github.com/Delaunay/torchcompat/actions/workflows/style.yml
 
 
-.. code-block:: bash
+.. code-block:: text
 
    pip install torchcompat
 
@@ -32,12 +32,12 @@ torchcompat
 Features
 --------
 
-Provide a super set implementation of pytorch device interface to enable code to run seamlessly between
-different accelerators.
+* Provide a super set implementation of pytorch device interface 
+  to enable code to run seamlessly between different accelerators.
+* Identify uniquely devices
 
-That means that torchcompat provide a superset of each implementations.
 
-.. code-block::
+.. code-block:: python
 
    import torchcompat.core as accelerator
 
@@ -47,3 +47,17 @@ That means that torchcompat provide a superset of each implementations.
    # on gaudi accelerator == ...
 
    assert accelerator.is_available() == true
+   assert accelerator.device_name in ('xpu', 'cuda')           # rocm is seen as cuda by pytorch
+   assert accelerator.device_string(0) == "cuda:0" or "xpu:0" 
+   assert accelerator.fetch_device(0) == torch.device("cuda:0") 
+
+
+   accelerator.set_enable_tf32(true) # toggle the right flags for each backend
+
+
+Example
+-------
+
+.. code-block:: python
+
+   example here

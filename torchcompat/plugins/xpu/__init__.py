@@ -17,4 +17,13 @@ if torch.xpu.is_available():
 
 impl = torch.xpu
 
+
+def set_enable_tf32(enable=True):
+    if enable:
+        ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
+    else:
+        ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
+
+
 setattr(impl, "device_type", "xpu")
+setattr(impl, "set_enable_tf32", set_enable_tf32)

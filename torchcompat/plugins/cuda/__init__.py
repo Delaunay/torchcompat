@@ -14,4 +14,10 @@ if not torch.version.cuda:
 
 impl = torch.cuda
 
+def set_enable_tf32(enable=True):
+    torch.backends.cuda.matmul.allow_tf32 = enable
+    torch.backends.cudnn.allow_tf32 = enable
+
+
 setattr(impl, "device_type", "cuda")
+setattr(impl, "set_enable_tf32", set_enable_tf32)
