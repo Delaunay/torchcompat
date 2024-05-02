@@ -19,5 +19,9 @@ def set_enable_tf32(enable=True):
     torch.backends.cudnn.allow_tf32 = enable
 
 
+
+ccl = "nccl"
+
+
 setattr(impl, "device_type", "cuda")
 setattr(impl, "set_enable_tf32", set_enable_tf32)

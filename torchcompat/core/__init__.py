@@ -29,10 +29,21 @@ def device_string(id: int):
 def fetch_device(id: int):
     return torch.device(device_string(id))
 
+
+def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
+    torch.distributed.init_process_group(*args, backend=backend, rank=rank, world_size=world_size, **kwargs)
+
+
+def destroy_process_group():
+    torch.distributed.destroy_process_group()
+
 #
 # Default noops that gets overriden if they exist
 #
 
+# Not all device support tf32
+def set_enable_tf32(enable=True):
+    pass
 
 #
 # XPU has a special optimizer
@@ -57,28 +68,9 @@ def is_available():
 
 device_name = "cpu"
 
-
-#
-# XPU does NOT implement amp.GradScaler 
-#
-class NoScale:
-    def __init__(self, enabled=True) -> None:
-        pass
-
-    def scale(self, loss):
-        return loss
-    
-    def step(self, optimizer):
-        optimizer.step()
-
-    def update(self):
-        pass
-
-
-setattr(device_module.amp, "GradScaler", NoScale)
-
 #
 # Add device interface to current module
+#   overriding the default implementation when available
 #
 self = current_module = sys.modules[__name__]
 for k, v in vars(device_module).items():

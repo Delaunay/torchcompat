@@ -25,5 +25,29 @@ def set_enable_tf32(enable=True):
         ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
 
 
+ccl = "gloo"
+
+
+
+#
+# XPU does NOT implement amp.GradScaler 
+#
+class NoScale:
+    def __init__(self, enabled=True) -> None:
+        pass
+
+    def scale(self, loss):
+        return loss
+    
+    def step(self, optimizer):
+        optimizer.step()
+
+    def update(self):
+        pass
+
+
+if not hasattr(impl.map, "GradScaler"):
+    setattr(impl.amp, "GradScaler", NoScale)
+
 setattr(impl, "device_type", "xpu")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
