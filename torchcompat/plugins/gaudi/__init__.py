@@ -1,4 +1,4 @@
-"""Plugin example"""
+"""Gaudi compatibility layer"""
 
 import torch
 import os
@@ -11,7 +11,7 @@ except ImportError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 
 
-impl = htcore
+impl = htcore.hpu
 
 
 ccl = "hccl"
@@ -51,6 +51,8 @@ def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
 
 def destroy_process_group():
     torch.distributed.destroy_process_group()
+
+
 
 
 # ?
