@@ -23,7 +23,7 @@ device_module = load_device()
 # Helpers
 #
 def device_string(id: int):
-    return f"{device_module.device_name}:{id}"
+    return f"{device_module.device_type}:{id}"
 
 
 def fetch_device(id: int):
@@ -63,6 +63,13 @@ def optimizer(model, *args, optimizer=None, dtype=None, **kwargs):
     else:
         return model, optimizer
 
+
+def empty_cache():
+    pass
+
+
+def synchronize():
+    pass
 
 #
 # This actually cannot really trigger because  load_device would raise NoDeviceDetected

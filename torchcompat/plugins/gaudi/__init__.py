@@ -62,6 +62,6 @@ def destroy_process_group():
 
 
 # ?
-os.environ["PT_HPU_LAZY_MODE"] = "0"
+# os.environ["PT_HPU_LAZY_MODE"] = "0"
 
 setattr(impl, "device_type", "hpu")
