@@ -6,9 +6,9 @@ from functools import cache
 
 from torchcompat.core.errors import NotAvailable
 
-
 missing_backend_reason = {}
 default_device = None
+
 
 class NoDeviceDetected(Exception):
     pass
@@ -45,11 +45,11 @@ def discover_plugins(module):
     errors = {}
 
     for _, name, _ in pkgutil.iter_modules(path, name + "."):
-        
+
         try:
             backend = importlib.import_module(name)
 
-            if 'cpu' in name:
+            if "cpu" in name:
                 default_device = backend
 
             plugins[name] = backend
@@ -72,19 +72,19 @@ def load_plugins():
 @cache
 def load_device(ensure=None):
     """Load a compute device, CPU is not valid.
-    
+
     Arguments
     ---------
     ensure: optional, str
         name of the expected backend (xpu, cuda, hpu, rocm)
         if the backend do not match raise
-    
+
     """
     devices = load_plugins()
 
     if len(devices) == 0:
         explain_errors()
-        
+
     impl = devices.popitem()[1].impl
     if ensure is not None:
         assert impl.device_type == ensure
@@ -95,13 +95,13 @@ def load_device(ensure=None):
 @cache
 def load_available(ensure=None):
     """Load the fastest available compute device, fallsback to CPU
-    
+
     Arguments
     ---------
     ensure: optional, str
         name of the expected backend (xpu, cuda, hpu, rocm)
         if the backend do not match raise
-    
+
     """
     devices = load_plugins()
     impl = default_device.impl

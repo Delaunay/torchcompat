@@ -1,7 +1,8 @@
 """Gaudi compatibility layer"""
 
-import torch
 import os
+
+import torch
 
 from torchcompat.core.errors import NotAvailable
 
@@ -25,11 +26,11 @@ ccl = "hccl"
 
 #     def scale(self, loss):
 #         return loss
-    
+
 #     def backward(self, loss):
 #         loss.backward()
 #         htcore.mark_step()
-    
+
 #     def step(self, optimizer):
 #         optimizer.step()
 #         htcore.mark_step()
@@ -46,13 +47,13 @@ def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
 
     world_size, rank, local_rank = initialize_distributed_hpu()
 
-    torch.distributed.init_process_group(*args, backend='hccl', rank=rank, world_size=world_size, **kwargs)
+    torch.distributed.init_process_group(
+        *args, backend="hccl", rank=rank, world_size=world_size, **kwargs
+    )
 
 
 def destroy_process_group():
     torch.distributed.destroy_process_group()
-
-
 
 
 # ?

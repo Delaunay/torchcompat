@@ -29,7 +29,7 @@ def set_enable_tf32(enable=True):
 ccl = "ccl"
 
 #
-# XPU does NOT implement amp.GradScaler 
+# XPU does NOT implement amp.GradScaler
 #
 class NoScale:
     def __init__(self, enabled=True) -> None:
@@ -37,7 +37,7 @@ class NoScale:
 
     def scale(self, loss):
         return loss
-    
+
     def step(self, optimizer):
         optimizer.step()
 

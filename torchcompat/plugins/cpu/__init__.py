@@ -1,8 +1,8 @@
 """Plugin example"""
 
-from torchcompat.core.errors import NotAvailable
-
 import torch
+
+from torchcompat.core.errors import NotAvailable
 
 impl = torch.cpu
 

@@ -12,9 +12,9 @@ __url__ = "https://github.com/Delaunay/torchcompat"
 
 import sys
 
-from torchcompat.core.load import load_device
-
 import torch
+
+from torchcompat.core.load import load_device
 
 device_module = load_device()
 
@@ -32,11 +32,14 @@ def fetch_device(id: int):
 
 def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
     backend = backend or device_module.ccl
-    torch.distributed.init_process_group(*args, backend=backend, rank=rank, world_size=world_size, **kwargs)
+    torch.distributed.init_process_group(
+        *args, backend=backend, rank=rank, world_size=world_size, **kwargs
+    )
 
 
 def destroy_process_group():
     torch.distributed.destroy_process_group()
+
 
 #
 # Default noops that gets overriden if they exist
@@ -45,6 +48,7 @@ def destroy_process_group():
 # Not all device support tf32
 def set_enable_tf32(enable=True):
     pass
+
 
 #
 # XPU has a special optimizer
@@ -65,6 +69,7 @@ def optimizer(model, *args, optimizer=None, dtype=None, **kwargs):
 # so this does not make it possible to fallback on CPU
 def is_available():
     return True
+
 
 #
 # Add device interface to current module
