@@ -75,3 +75,6 @@ docs/src/reference
 target/
 _build/
 .ruff_cache
+
+
+.vscode/

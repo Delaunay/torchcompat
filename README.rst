@@ -47,8 +47,8 @@ Features
    # on gaudi accelerator == ...
 
    assert accelerator.is_available() == true
-   assert accelerator.device_name in ('xpu', 'cuda')           # rocm is seen as cuda by pytorch
-   assert accelerator.device_string(0) == "cuda:0" or "xpu:0" 
+   assert accelerator.device_name in ('xpu', 'cuda', "hpu")           # rocm is seen as cuda by pytorch
+   assert accelerator.device_string(0) == "cuda:0" or "xpu:0" or "hpu:0" 
    assert accelerator.fetch_device(0) == torch.device("cuda:0") 
 
 

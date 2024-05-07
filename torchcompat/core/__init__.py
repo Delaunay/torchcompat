@@ -31,6 +31,7 @@ def fetch_device(id: int):
 
 
 def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
+    backend = backend or device_module.ccl
     torch.distributed.init_process_group(*args, backend=backend, rank=rank, world_size=world_size, **kwargs)
 
 
@@ -64,9 +65,6 @@ def optimizer(model, *args, optimizer=None, dtype=None, **kwargs):
 # so this does not make it possible to fallback on CPU
 def is_available():
     return True
-
-
-device_name = "cpu"
 
 #
 # Add device interface to current module

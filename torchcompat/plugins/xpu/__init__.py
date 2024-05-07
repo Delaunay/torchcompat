@@ -25,9 +25,8 @@ def set_enable_tf32(enable=True):
         ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
 
 
-ccl = "gloo"
-
-
+# https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
+ccl = "ccl"
 
 #
 # XPU does NOT implement amp.GradScaler 

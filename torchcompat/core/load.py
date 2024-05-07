@@ -7,9 +7,18 @@ from functools import cache
 from torchcompat.core.errors import NotAvailable
 
 
-def explain_errors(errors):
+missing_backend_reason = {}
+default_device = None
+
+class NoDeviceDetected(Exception):
+    pass
+
+
+def explain_errors():
+    global missing_backend_reason
+
     frags = []
-    for k, v in errors.items():
+    for k, v in missing_backend_reason.items():
         message = [str(v)]
         if v.__cause__:
             message.append(f"because")
@@ -26,6 +35,9 @@ def explain_errors(errors):
 
 def discover_plugins(module):
     """Discover uetools plugins"""
+    global missing_backend_reason
+    global default_device
+
     path = module.__path__
     name = module.__name__
 
@@ -33,13 +45,18 @@ def discover_plugins(module):
     errors = {}
 
     for _, name, _ in pkgutil.iter_modules(path, name + "."):
+        
         try:
-            plugins[name] = importlib.import_module(name)
+            backend = importlib.import_module(name)
+
+            if 'cpu' in name:
+                default_device = backend
+
+            plugins[name] = backend
         except NotAvailable as err:
             errors[name] = err
 
-    if len(plugins) == 0:
-        explain_errors(errors)
+    missing_backend_reason = errors
 
     return plugins
 
@@ -52,15 +69,50 @@ def load_plugins():
     return devices
 
 
-class NoDeviceDetected(Exception):
-    pass
+@cache
+def load_device(ensure=None):
+    """Load a compute device, CPU is not valid.
+    
+    Arguments
+    ---------
+    ensure: optional, str
+        name of the expected backend (xpu, cuda, hpu, rocm)
+        if the backend do not match raise
+    
+    """
+    devices = load_plugins()
+
+    if len(devices) == 0:
+        explain_errors()
+        
+    impl = devices.popitem()[1].impl
+    if ensure is not None:
+        assert impl.device_type == ensure
+
+    return impl
 
 
 @cache
-def load_device():
+def load_available(ensure=None):
+    """Load the fastest available compute device, fallsback to CPU
+    
+    Arguments
+    ---------
+    ensure: optional, str
+        name of the expected backend (xpu, cuda, hpu, rocm)
+        if the backend do not match raise
+    
+    """
     devices = load_plugins()
+    impl = default_device.impl
 
-    return devices.popitem()[1].impl
+    if len(devices) > 0:
+        impl = devices.popitem()[1].impl
+
+    if ensure is not None:
+        assert impl.device_type == ensure
+
+    return impl
 
 
 if __name__ == "__main__":
