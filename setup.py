@@ -37,7 +37,10 @@ if __name__ == "__main__":
             "torchcompat.plugins.xpu",
         ],
         setup_requires=["setuptools"],
-        install_requires=["importlib_resources"],
+        install_requires=[
+            "importlib_resources",
+            "torch",
+        ],
         package_data={
             "torchcompat.data": [
                 "torchcompat/data",

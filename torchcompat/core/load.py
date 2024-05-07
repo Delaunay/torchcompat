@@ -2,7 +2,7 @@
 
 import importlib
 import pkgutil
-from functools import cache
+from functools import lru_cache
 
 from torchcompat.core.errors import NotAvailable
 
@@ -21,7 +21,7 @@ def explain_errors():
     for k, v in missing_backend_reason.items():
         message = [str(v)]
         if v.__cause__:
-            message.append(f"because")
+            message.append("because")
             message.append(str(v.__cause__))
         error = " ".join(message)
 
@@ -69,7 +69,7 @@ def load_plugins():
     return devices
 
 
-@cache
+@lru_cache
 def load_device(ensure=None):
     """Load a compute device, CPU is not valid.
 
@@ -92,7 +92,7 @@ def load_device(ensure=None):
     return impl
 
 
-@cache
+@lru_cache
 def load_available(ensure=None):
     """Load the fastest available compute device, fallsback to CPU
 

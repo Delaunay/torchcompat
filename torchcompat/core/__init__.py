@@ -42,7 +42,7 @@ def destroy_process_group():
 
 
 #
-# Default noops that gets overriden if they exist
+# Default noops that gets overridden if they exist
 #
 
 # Not all device support tf32

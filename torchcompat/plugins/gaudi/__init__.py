@@ -8,11 +8,16 @@ from torchcompat.core.errors import NotAvailable
 
 try:
     import habana_frameworks.torch.core as htcore
+except ModuleNotFoundError as err:
+    raise NotAvailable("Could not import habana_framworks") from err
 except ImportError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 
 
 impl = htcore.hpu
+
+if not impl.hpu.is_available():
+    raise NotAvailable("torch.hpu is not available")
 
 
 ccl = "hccl"
@@ -43,8 +48,7 @@ ccl = "hccl"
 
 
 def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
-    from habana_frameworks.torch.distributed.hccl import \
-        initialize_distributed_hpu
+    from habana_frameworks.torch.distributed.hccl import initialize_distributed_hpu
 
     world_size, rank, local_rank = initialize_distributed_hpu()
 

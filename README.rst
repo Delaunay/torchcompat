@@ -32,7 +32,7 @@ torchcompat
 Features
 --------
 
-* Provide a super set implementation of pytorch device interface 
+* Provide a super set implementation of pytorch device interface
   to enable code to run seamlessly between different accelerators.
 * Identify uniquely devices
 
@@ -48,8 +48,8 @@ Features
 
    assert accelerator.is_available() == true
    assert accelerator.device_name in ('xpu', 'cuda', "hpu")           # rocm is seen as cuda by pytorch
-   assert accelerator.device_string(0) == "cuda:0" or "xpu:0" or "hpu:0" 
-   assert accelerator.fetch_device(0) == torch.device("cuda:0") 
+   assert accelerator.device_string(0) == "cuda:0" or "xpu:0" or "hpu:0"
+   assert accelerator.fetch_device(0) == torch.device("cuda:0")
 
 
    accelerator.set_enable_tf32(true) # toggle the right flags for each backend

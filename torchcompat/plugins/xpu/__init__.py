@@ -11,7 +11,7 @@ if not hasattr(torch, "xpu"):
         raise NotAvailable("Could not import intel_extension_for_pytorch") from err
 
 
-if torch.xpu.is_available():
+if not torch.xpu.is_available():
     raise NotAvailable("torch.xpu is not available")
 
 
@@ -45,7 +45,7 @@ class NoScale:
         pass
 
 
-if not hasattr(impl.map, "GradScaler"):
+if not hasattr(impl.amp, "GradScaler"):
     setattr(impl.amp, "GradScaler", NoScale)
 
 setattr(impl, "device_type", "xpu")
