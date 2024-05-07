@@ -1,5 +1,5 @@
 import torchcompat.plugins
-from torchcompat.core import discover_plugins
+from torchcompat.core.load import discover_plugins
 
 
 def test_plugins():

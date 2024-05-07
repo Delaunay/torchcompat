@@ -43,7 +43,8 @@ ccl = "hccl"
 
 
 def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
-    from habana_frameworks.torch.distributed.hccl import initialize_distributed_hpu
+    from habana_frameworks.torch.distributed.hccl import \
+        initialize_distributed_hpu
 
     world_size, rank, local_rank = initialize_distributed_hpu()
 
