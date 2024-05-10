@@ -26,6 +26,10 @@ def device_string(id: int):
     return f"{device_module.device_type}:{id}"
 
 
+def mark_step():
+    pass
+
+
 def fetch_device(id: int):
     return torch.device(device_string(id))
 

@@ -50,3 +50,4 @@ if not hasattr(impl.amp, "GradScaler"):
 
 setattr(impl, "device_type", "xpu")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
+setattr(impl, "ccl", ccl)

@@ -1,6 +1,7 @@
 """Gaudi compatibility layer"""
 
 import os
+from contextlib import contextmanager
 
 import torch
 
@@ -8,6 +9,7 @@ from torchcompat.core.errors import NotAvailable
 
 try:
     import habana_frameworks.torch.core as htcore
+    import habana_frameworks.torch.gpu_migration
 except ModuleNotFoundError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 except ImportError as err:
@@ -61,7 +63,66 @@ def destroy_process_group():
     torch.distributed.destroy_process_group()
 
 
-# ?
-# os.environ["PT_HPU_LAZY_MODE"] = "0"
+def realsynch():
+    # Default synchronize does not sync
+    impl.default_stream().synchronize()
+
+
+def set_enable_tf32(enable=True):
+    pass
+
+
+class amp:
+    @contextmanager
+    @staticmethod
+    def autocast(*args, device_type=None, **kwargs):
+        device_type = "hpu"
+        with torch.autocast(*args, device_type=device_type, **kwargs):
+            yield
+
+
+    class GradScaler:
+        def __init__(self, *args, enabled=False, **kwargs):
+            pass
+        
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def scale(self, *args):
+            if len(args) == 1:
+                return args[0]
+            return args
+
+        def step(self, optimizer, *args, **kwargs):
+            return optimizer.step(*args, **kwargs)
+
+        def update(self, *args):
+            pass
+
+    # class GradScaler(torch.amp.GradScaler):
+    #     def __init__(
+    #         self,
+    #         init_scale: float = 2.0**16,
+    #         growth_factor: float = 2.0,
+    #         backoff_factor: float = 0.5,
+    #         growth_interval: int = 2000,
+    #         enabled: bool = True,
+    #     ) -> None:
+    #         super().__init__(
+    #             "hpu",
+    #             init_scale=init_scale,
+    #             growth_factor=growth_factor,
+    #             backoff_factor=backoff_factor,
+    #             growth_interval=growth_interval,
+    #             enabled=enabled,
+    #         )
 
 setattr(impl, "device_type", "hpu")
+setattr(impl, "synchronize", realsynch)
+setattr(impl, "set_enable_tf32", set_enable_tf32)
+setattr(impl, "mark_step", htcore.mark_step)
+setattr(impl, "amp", amp)
+setattr(impl, "ccl", ccl)

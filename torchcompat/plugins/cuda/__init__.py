@@ -25,3 +25,4 @@ ccl = "nccl"
 
 setattr(impl, "device_type", "cuda")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
+setattr(impl, "ccl", ccl)
