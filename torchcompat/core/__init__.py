@@ -1,8 +1,7 @@
 """Top level module for torchcompat"""
 
-
 __descr__ = "torch compatibility layer"
-__version__ = "0.0.2"
+__version__ = "1.0.0"
 __license__ = "BSD 3-Clause License"
 __author__ = "Anonymous"
 __author_email__ = "anony@mous.com"
@@ -49,6 +48,7 @@ def destroy_process_group():
 # Default noops that gets overridden if they exist
 #
 
+
 # Not all device support tf32
 def set_enable_tf32(enable=True):
     pass
@@ -57,7 +57,7 @@ def set_enable_tf32(enable=True):
 #
 # XPU has a special optimizer
 #
-def optimizer(model, *args, optimizer=None, dtype=None, **kwargs):
+def optimize(model, *args, optimizer=None, dtype=None, **kwargs):
     if dtype is not None:
         # model.to(dtype=dtype) ?
         pass
@@ -74,6 +74,7 @@ def empty_cache():
 
 def synchronize():
     pass
+
 
 #
 # This actually cannot really trigger because  load_device would raise NoDeviceDetected

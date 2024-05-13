@@ -50,6 +50,7 @@ ccl = "hccl"
 
 
 def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
+    import habana_frameworks.torch.distributed.hccl
     from habana_frameworks.torch.distributed.hccl import initialize_distributed_hpu
 
     world_size, rank, local_rank = initialize_distributed_hpu()
@@ -64,12 +65,15 @@ def destroy_process_group():
 
 
 def realsynch():
+    # make a step to force compute
+    htcore.mark_step()
+
     # Default synchronize does not sync
     impl.default_stream().synchronize()
 
 
 def set_enable_tf32(enable=True):
-    pass
+    print("HPU cannot disable tf32")
 
 
 class amp:
@@ -80,11 +84,10 @@ class amp:
         with torch.autocast(*args, device_type=device_type, **kwargs):
             yield
 
-
     class GradScaler:
         def __init__(self, *args, enabled=False, **kwargs):
             pass
-        
+
         def __enter__(self):
             return self
 
@@ -120,6 +123,12 @@ class amp:
     #             enabled=enabled,
     #         )
 
+
+def device_string(id: int):
+    return "hpu"
+
+
+setattr(impl, "device_string", device_string)
 setattr(impl, "device_type", "hpu")
 setattr(impl, "synchronize", realsynch)
 setattr(impl, "set_enable_tf32", set_enable_tf32)

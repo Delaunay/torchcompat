@@ -28,6 +28,7 @@ def set_enable_tf32(enable=True):
 # https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
 ccl = "ccl"
 
+
 #
 # XPU does NOT implement amp.GradScaler
 #
