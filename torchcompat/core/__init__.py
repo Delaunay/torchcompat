@@ -1,7 +1,7 @@
 """Top level module for torchcompat"""
 
 __descr__ = "torch compatibility layer"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __license__ = "BSD 3-Clause License"
 __author__ = "Anonymous"
 __author_email__ = "anony@mous.com"
