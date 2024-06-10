@@ -39,7 +39,7 @@ if __name__ == "__main__":
         setup_requires=["setuptools"],
         install_requires=[
             "importlib_resources",
-            "torch",
+            # "torch",
         ],
         package_data={
             "torchcompat.data": [
