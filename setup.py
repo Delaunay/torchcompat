@@ -9,7 +9,7 @@ with open("torchcompat/core/__init__.py") as file:
             version = line.split("=")[1].strip().replace('"', "")
             break
 
-extra_requires = {"plugins": ["importlib_resources"]}
+extra_requires = {"plugins": ["importlib_resources"], "base": ["torch"]}
 extra_requires["all"] = sorted(set(sum(extra_requires.values(), [])))
 
 if __name__ == "__main__":
@@ -39,7 +39,6 @@ if __name__ == "__main__":
         setup_requires=["setuptools"],
         install_requires=[
             "importlib_resources",
-            "torch",
         ],
         package_data={
             "torchcompat.data": [
