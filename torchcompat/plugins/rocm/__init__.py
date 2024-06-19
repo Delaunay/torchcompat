@@ -14,7 +14,7 @@ if not torch.version.hip:
 
 impl = torch.cuda
 
-ccl = "rccl"
+ccl = "nccl"
 
 setattr(impl, "device_type", "cuda")
 setattr(impl, "ccl", ccl)
