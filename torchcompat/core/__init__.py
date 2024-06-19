@@ -13,9 +13,9 @@ import sys
 
 import torch
 
-from torchcompat.core.load import load_device
+from torchcompat.core.load import load_available
 
-device_module = load_device()
+device_module = load_available()
 
 
 #
