@@ -35,6 +35,8 @@ if __name__ == "__main__":
             "torchcompat.plugins.cuda",
             "torchcompat.plugins.rocm",
             "torchcompat.plugins.xpu",
+            "torchcompat.plugins.cpu",
+            "torchcompat.plugins.gaudi",
         ],
         setup_requires=["setuptools"],
         install_requires=[
