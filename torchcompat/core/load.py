@@ -29,8 +29,8 @@ def explain_errors():
 
     sep = "\n    - "
     errors = sep.join(frags)
-
-    raise NoDeviceDetected(f"Tried:{sep}{errors}")
+    print(f"Tried:{sep}{errors}")
+    # raise NoDeviceDetected(f"Tried:{sep}{errors}")
 
 
 def discover_plugins(module):
@@ -84,6 +84,8 @@ def load_device(ensure=None):
 
     if len(devices) == 0:
         explain_errors()
+        import torch
+        return torch.cpu
 
     impl = devices.popitem()[1].impl
     if ensure is not None:
