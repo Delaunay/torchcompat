@@ -32,6 +32,7 @@ if __name__ == "__main__":
         ],
         packages=[
             "torchcompat.core",
+            "torchcompat.plugins",
             "torchcompat.plugins.cuda",
             "torchcompat.plugins.rocm",
             "torchcompat.plugins.xpu",

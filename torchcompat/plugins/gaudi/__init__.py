@@ -15,11 +15,6 @@ except ModuleNotFoundError as err:
 except ImportError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 
-try:
-    
-except ImportError:
-    GaudiAccelerator = None
-    
 
 impl = htcore.hpu
 
@@ -131,13 +126,16 @@ class amp:
 def device_string(id: int):
     return "hpu"
 
+
 #
 # Huggingface
 #
 class accelerate:
     def Accelerator(*args, **kwargs):
-        import optimum.habana.accelerate.accelerator import GaudiAccelerator
+        from optimum.habana.accelerate.accelerator import GaudiAccelerator
+
         return GaudiAccelerator(*args, **kwargs)
+
 
 setattr(impl, "accelerate", accelerate)
 
