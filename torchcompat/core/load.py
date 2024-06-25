@@ -44,10 +44,8 @@ def discover_plugins(module):
     errors = {}
 
     for _, name, _ in pkgutil.iter_modules(path, name + "."):
-
         try:
             backend = importlib.import_module(name)
-
             if "cpu" in name:
                 default_device = backend
 
@@ -103,7 +101,6 @@ def load_available(ensure=None):
 
     """
     devices = load_plugins()
-    impl = default_device.impl
 
     if len(devices) > 0:
         impl = devices.popitem()[1].impl
@@ -111,7 +108,7 @@ def load_available(ensure=None):
     if ensure is not None:
         assert impl.device_type == ensure
 
-    return impl
+    return default_device.impl
 
 
 if __name__ == "__main__":

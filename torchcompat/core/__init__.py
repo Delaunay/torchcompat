@@ -84,6 +84,16 @@ def is_available():
 
 
 #
+# Huggingface accelerate
+#
+class accelerate:
+    def Accelerator(*args, **kwargs):
+        from accelerate import Accelerator
+
+        return Accelerator(*args, **kwargs)
+
+
+#
 # Add device interface to current module
 #   overriding the default implementation when available
 #
