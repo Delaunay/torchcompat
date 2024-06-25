@@ -16,7 +16,7 @@ except ImportError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 
 try:
-    import optimum.habana.accelerate.accelerator import GaudiAccelerator
+    
 except ImportError:
     GaudiAccelerator = None
     
@@ -25,17 +25,6 @@ impl = htcore.hpu
 
 if not impl.hpu.is_available():
     raise NotAvailable("torch.hpu is not available")
-
-
-if GaudiAccelerator:
-    #
-    # huggingface
-    #
-    class accelerate:
-        Accelerator = GaudiAccelerator
-
-    setattr(impl, "accelerate", accelerate)
-
 
 ccl = "hccl"
 
@@ -142,6 +131,15 @@ class amp:
 def device_string(id: int):
     return "hpu"
 
+#
+# Huggingface
+#
+class accelerate:
+    def Accelerator(*args, **kwargs):
+        import optimum.habana.accelerate.accelerator import GaudiAccelerator
+        return GaudiAccelerator(*args, **kwargs)
+
+setattr(impl, "accelerate", accelerate)
 
 setattr(impl, "device_string", device_string)
 setattr(impl, "device_type", "hpu")
