@@ -89,7 +89,7 @@ def is_available():
 class accelerate:
     def Accelerator(*args, **kwargs):
         from accelerate import Accelerator
-        return Accelerator
+        return Accelerator(*args, **kwargs)
 
 setattr(impl, "accelerate", accelerate)
 
