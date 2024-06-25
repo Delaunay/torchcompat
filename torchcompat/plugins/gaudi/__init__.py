@@ -15,11 +15,26 @@ except ModuleNotFoundError as err:
 except ImportError as err:
     raise NotAvailable("Could not import habana_framworks") from err
 
+try:
+    import optimum.habana.accelerate.accelerator import GaudiAccelerator
+except ImportError:
+    GaudiAccelerator = None
+    
 
 impl = htcore.hpu
 
 if not impl.hpu.is_available():
     raise NotAvailable("torch.hpu is not available")
+
+
+if GaudiAccelerator:
+    #
+    # huggingface
+    #
+    class accelerate:
+        Accelerator = GaudiAccelerator
+
+    setattr(impl, "accelerate", accelerate)
 
 
 ccl = "hccl"
