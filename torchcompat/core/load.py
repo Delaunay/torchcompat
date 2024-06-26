@@ -101,6 +101,7 @@ def load_available(ensure=None):
 
     """
     devices = load_plugins()
+    impl = default_device.impl
 
     if len(devices) > 0:
         impl = devices.popitem()[1].impl
@@ -108,7 +109,7 @@ def load_available(ensure=None):
     if ensure is not None:
         assert impl.device_type == ensure
 
-    return default_device.impl
+    return impl
 
 
 if __name__ == "__main__":
