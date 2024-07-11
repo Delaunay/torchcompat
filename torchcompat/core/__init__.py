@@ -1,7 +1,7 @@
 """Top level module for torchcompat"""
 
 __descr__ = "torch compatibility layer"
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __license__ = "BSD 3-Clause License"
 __author__ = "Anonymous"
 __author_email__ = "anony@mous.com"
@@ -10,12 +10,28 @@ __url__ = "https://github.com/Delaunay/torchcompat"
 
 
 import sys
+import time
 
 import torch
 
 from torchcompat.core.load import load_available
 
 device_module = load_available()
+
+
+class Event:
+    def __init__(self, **kwargs):
+        self.start = 0
+
+    def record(self):
+        self.start = time.time()
+
+    def elapsed_time(self, end):
+        # should return ms
+        return (end.start - self.start) * 1000
+
+    def synchronize(self):
+        pass
 
 
 #
