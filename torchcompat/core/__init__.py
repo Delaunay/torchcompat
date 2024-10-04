@@ -22,7 +22,14 @@ device_module = load_available()
 #
 # Helpers
 #
-def device_string(id: int):
+def fetch_device_id():
+    try:
+        import os
+        return int(os.getenv("LOCAL_RANK", "0"))
+    except:
+        return 0
+
+def device_string(id: int = fetch_device_id()):
     return f"{device_module.device_type}:{id}"
 
 
@@ -30,7 +37,7 @@ def mark_step():
     pass
 
 
-def fetch_device(id: int):
+def fetch_device(id: int = fetch_device_id()):
     return torch.device(device_string(id))
 
 
