@@ -8,6 +8,9 @@ import torch
 from torchcompat.core.errors import NotAvailable
 
 try:
+    from habana_frameworks.torch import hpu
+    hpu.init()
+
     import habana_frameworks.torch.core as htcore
     import habana_frameworks.torch.gpu_migration
 except ModuleNotFoundError as err:
@@ -20,6 +23,7 @@ impl = htcore.hpu
 
 if not impl.hpu.is_available():
     raise NotAvailable("torch.hpu is not available")
+
 
 ccl = "hccl"
 
@@ -52,8 +56,10 @@ def init_process_group(*args, backend=None, rank=-1, world_size=-1, **kwargs):
     import habana_frameworks.torch.distributed.hccl
     from habana_frameworks.torch.distributed.hccl import initialize_distributed_hpu
 
+    print(world_size, rank, kwargs)
     world_size, rank, local_rank = initialize_distributed_hpu()
 
+    print(world_size, rank, local_rank)
     torch.distributed.init_process_group(
         *args, backend="hccl", rank=rank, world_size=world_size, **kwargs
     )
@@ -123,8 +129,12 @@ class amp:
     #         )
 
 
+
+# available_modules = _get_available_modules_from_environ()
+
+
 def device_string(id: int):
-    return "hpu"
+    return f"hpu:{id}"
 
 
 #
