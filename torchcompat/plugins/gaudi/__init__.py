@@ -134,21 +134,30 @@ class amp:
 
 
 def device_string(id: int):
+    
     return f"hpu:{id}"
 
-
+ 
+def fetch_device(id: int):
+    return torch.device("hpu", torch.hpu.current_device())
+    
 #
 # Huggingface
 #
 class accelerate:
+
     def Accelerator(*args, **kwargs):
         from optimum.habana.accelerate.accelerator import GaudiAccelerator
 
-        return GaudiAccelerator(*args, **kwargs)
+        class Custom(GaudiAccelerator):
+            def backward(self, *args, **kwargs):
+                super.backward(*args, **kwargs)
+                htcore.mark_step()
+                
+        return Custom(*args, **kwargs)
 
 
 setattr(impl, "accelerate", accelerate)
-
 setattr(impl, "device_string", device_string)
 setattr(impl, "device_type", "hpu")
 setattr(impl, "synchronize", realsynch)
@@ -157,3 +166,4 @@ setattr(impl, "mark_step", htcore.mark_step)
 setattr(impl, "amp", amp)
 setattr(impl, "ccl", ccl)
 setattr(impl, "init_process_group", init_process_group)
+setattr(impl, "fetch_device", fetch_device)
