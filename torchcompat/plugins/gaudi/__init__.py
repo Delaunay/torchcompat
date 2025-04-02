@@ -159,7 +159,8 @@ class accelerate:
 
 
 def compile(model, backend="hpu_backend", **kwargs):
-    # return torch.compile(model, backend=backend, **kwargs)
+    if int(os.getenv("TORCHCOMPAT_COMPILE", "1")):
+        return torch.compile(model, backend=backend, **kwargs)
     return model
     
 compile_backend = "hpu_backend"
