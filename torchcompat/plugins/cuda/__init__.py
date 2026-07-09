@@ -1,5 +1,7 @@
 """CUDA compatibility layer"""
 
+import contextlib
+
 import torch
 
 from torchcompat.core.errors import NotAvailable
@@ -23,6 +25,22 @@ def set_enable_tf32(enable=True):
 ccl = "nccl"
 
 
+@contextlib.contextmanager
+def step():
+    yield
+
+
+def optimizer_step(optimizer, barrier=False, **kwargs):
+    return optimizer.step(**kwargs)
+
+
+def launch(fn, args=(), start_method="spawn", debug_single_process=False):
+    fn(0, *args)
+
+
 setattr(impl, "device_type", "cuda")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
 setattr(impl, "ccl", ccl)
+setattr(impl, "step", step)
+setattr(impl, "optimizer_step", optimizer_step)
+setattr(impl, "launch", launch)

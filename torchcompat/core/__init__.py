@@ -10,7 +10,6 @@ __url__ = "https://github.com/Delaunay/torchcompat"
 
 
 import sys
-import time
 
 import torch
 
@@ -25,9 +24,11 @@ device_module = load_available()
 def fetch_device_id():
     try:
         import os
+
         return int(os.getenv("LOCAL_RANK", "0"))
-    except:
+    except Exception:
         return 0
+
 
 def device_string(id: int = fetch_device_id()):
     return f"{device_module.device_type}:{id}"
@@ -57,23 +58,17 @@ def destroy_process_group():
 #
 
 
-# Not all device support tf32
 def set_enable_tf32(enable=True):
     pass
 
 
-#
-# XPU has a special optimizer
-#
 def optimize(model, *args, optimizer=None, dtype=None, **kwargs):
     if dtype is not None:
-        # model.to(dtype=dtype) ?
         pass
 
     if optimizer is None:
         return model
-    else:
-        return model, optimizer
+    return model, optimizer
 
 
 def empty_cache():
@@ -84,16 +79,10 @@ def synchronize():
     pass
 
 
-#
-# This actually cannot really trigger because  load_device would raise NoDeviceDetected
-# so this does not make it possible to fallback on CPU
 def is_available():
     return True
 
 
-#
-# Huggingface accelerate
-#
 class accelerate:
     def Accelerator(*args, **kwargs):
         from accelerate import Accelerator
@@ -105,6 +94,8 @@ class accelerate:
 # Add device interface to current module
 #   overriding the default implementation when available
 #
-self = current_module = sys.modules[__name__]
-for k, v in vars(device_module).items():
-    setattr(self, k, v)
+current_module = sys.modules[__name__]
+for key, value in vars(device_module).items():
+    if key.startswith("__"):
+        continue
+    setattr(current_module, key, value)

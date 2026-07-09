@@ -1,5 +1,7 @@
 """Intel XPU support for pytorch"""
 
+import contextlib
+
 import torch
 
 from torchcompat.core.errors import NotAvailable
@@ -49,6 +51,23 @@ class NoScale:
 if not hasattr(impl.amp, "GradScaler"):
     setattr(impl.amp, "GradScaler", NoScale)
 
+
+@contextlib.contextmanager
+def step():
+    yield
+
+
+def optimizer_step(optimizer, barrier=False, **kwargs):
+    return optimizer.step(**kwargs)
+
+
+def launch(fn, args=(), start_method="spawn", debug_single_process=False):
+    fn(0, *args)
+
+
 setattr(impl, "device_type", "xpu")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
 setattr(impl, "ccl", ccl)
+setattr(impl, "step", step)
+setattr(impl, "optimizer_step", optimizer_step)
+setattr(impl, "launch", launch)

@@ -1,6 +1,7 @@
-"""Top level module for torchcompat"""
+"""Plugin loading and backend selection for torchcompat."""
 
 import importlib
+import os
 import pkgutil
 from functools import lru_cache
 
@@ -8,6 +9,41 @@ from torchcompat.core.errors import NotAvailable
 
 missing_backend_reason = {}
 default_device = None
+
+# Higher priority first. TT is listed before XLA so sysfs-visible Tenstorrent
+# hardware is preferred over the generic torch_xla CPU PJRT backend.
+BACKEND_PRIORITY = (
+    "cuda",
+    "rocm",
+    "xpu",
+    "gaudi",
+    "tt",
+    "xla",
+    "cpu",
+)
+
+
+def _plugin_short_name(module_name: str) -> str:
+    return module_name.rsplit(".", 1)[-1]
+
+
+def _select_plugin_impl(plugins: dict, *, allow_cpu: bool = True):
+    by_short = {_plugin_short_name(name): module for name, module in plugins.items()}
+    for short_name in BACKEND_PRIORITY:
+        if short_name == "cpu" and not allow_cpu:
+            continue
+        module = by_short.get(short_name)
+        if module is not None:
+            return module.impl
+    return None
+
+
+def _skipped_plugins():
+    return {
+        name.strip()
+        for name in os.environ.get("TORCHCOMPAT_SKIP_PLUGINS", "").split(",")
+        if name.strip()
+    }
 
 
 class NoDeviceDetected(Exception):
@@ -32,38 +68,98 @@ def explain_errors():
     raise NoDeviceDetected(f"Tried:{sep}{errors}")
 
 
-def discover_plugins(module):
-    """Discover uetools plugins"""
+def list_plugin_names(*, include_template: bool = False) -> list[str]:
+    import torchcompat.plugins
+
+    names = []
+    for _, name, _ in pkgutil.iter_modules(torchcompat.plugins.__path__):
+        if name == "template" and not include_template:
+            continue
+        names.append(name)
+    return sorted(names)
+
+
+def discover_plugins(module, *, respect_skip: bool = True):
+    """Import available plugins and return ``(plugins, errors)``."""
     global missing_backend_reason
     global default_device
 
     path = module.__path__
-    name = module.__name__
+    package_name = module.__name__
 
     plugins = {}
     errors = {}
+    skipped = _skipped_plugins() if respect_skip else set()
 
-    for _, name, _ in pkgutil.iter_modules(path, name + "."):
+    for _, module_name, _ in pkgutil.iter_modules(path, package_name + "."):
+        short_name = module_name.rsplit(".", 1)[-1]
+        if short_name in skipped:
+            continue
         try:
-            backend = importlib.import_module(name)
-            if "cpu" in name:
+            backend = importlib.import_module(module_name)
+            if "cpu" in module_name:
                 default_device = backend
 
-            plugins[name] = backend
+            plugins[module_name] = backend
         except NotAvailable as err:
-            errors[name] = err
+            errors[module_name] = err
+        except Exception as err:
+            errors[module_name] = err
 
-    missing_backend_reason = errors
+    if respect_skip:
+        missing_backend_reason.clear()
+        missing_backend_reason.update(errors)
 
-    return plugins
+    return plugins, errors
+
+
+def backend_status(*, respect_skip: bool = False) -> dict[str, dict]:
+    """Return availability information for every plugin."""
+    import torchcompat.plugins
+
+    plugins, errors = discover_plugins(torchcompat.plugins, respect_skip=respect_skip)
+    results = {}
+
+    for short_name in list_plugin_names():
+        module_name = f"torchcompat.plugins.{short_name}"
+        if module_name in plugins:
+            impl = plugins[module_name].impl
+            result = {
+                "ok": True,
+                "plugin": short_name,
+                "device_type": getattr(impl, "device_type", None),
+                "ccl": getattr(impl, "ccl", None),
+            }
+            if hasattr(impl, "fetch_device"):
+                result["device"] = str(impl.fetch_device(0))
+            results[short_name] = result
+            continue
+
+        err = errors.get(module_name)
+        if err is None and respect_skip and short_name in _skipped_plugins():
+            results[short_name] = {
+                "ok": False,
+                "plugin": short_name,
+                "error": "skipped",
+                "kind": "Skipped",
+            }
+            continue
+
+        results[short_name] = {
+            "ok": False,
+            "plugin": short_name,
+            "error": str(err) if err else "unavailable",
+            "kind": type(err).__name__ if err else "Unknown",
+        }
+
+    return results
 
 
 def load_plugins():
     import torchcompat.plugins
 
-    devices = discover_plugins(torchcompat.plugins)
-
-    return devices
+    plugins, _errors = discover_plugins(torchcompat.plugins)
+    return plugins
 
 
 @lru_cache
@@ -82,7 +178,10 @@ def load_device(ensure=None):
     if len(devices) == 0:
         explain_errors()
 
-    impl = devices.popitem()[1].impl
+    impl = _select_plugin_impl(devices, allow_cpu=False)
+    if impl is None:
+        explain_errors()
+
     if ensure is not None:
         assert impl.device_type == ensure
 
@@ -101,10 +200,9 @@ def load_available(ensure=None):
 
     """
     devices = load_plugins()
-    impl = default_device.impl
-
-    if len(devices) > 0:
-        impl = devices.popitem()[1].impl
+    impl = _select_plugin_impl(devices, allow_cpu=True)
+    if impl is None:
+        explain_errors()
 
     if ensure is not None:
         assert impl.device_type == ensure
@@ -113,11 +211,4 @@ def load_available(ensure=None):
 
 
 if __name__ == "__main__":
-    # import json
-    # import importlib_resources
-    # data_path = importlib_resources.files("torchcompat.data")
-
-    # with open(data_path / "data.json", encoding="utf-8") as file:
-    #     print(json.dumps(json.load(file), indent=2))
-
     print(load_device())

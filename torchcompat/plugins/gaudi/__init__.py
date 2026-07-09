@@ -140,7 +140,24 @@ def device_string(id: int):
  
 def fetch_device(id: int):
     return torch.device("hpu", torch.hpu.current_device())
-    
+
+
+@contextmanager
+def step():
+    yield
+
+
+def optimizer_step(optimizer, barrier=False, **kwargs):
+    result = optimizer.step(**kwargs)
+    if barrier:
+        htcore.mark_step()
+    return result
+
+
+def launch(fn, args=(), start_method="spawn", debug_single_process=False):
+    fn(0, *args)
+
+
 #
 # Huggingface
 #
@@ -167,3 +184,6 @@ setattr(impl, "amp", amp)
 setattr(impl, "ccl", ccl)
 setattr(impl, "init_process_group", init_process_group)
 setattr(impl, "fetch_device", fetch_device)
+setattr(impl, "step", step)
+setattr(impl, "optimizer_step", optimizer_step)
+setattr(impl, "launch", launch)
