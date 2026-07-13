@@ -4,7 +4,7 @@ import contextlib
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 if not hasattr(torch, "xpu"):
     try:

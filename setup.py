@@ -18,7 +18,7 @@ TT_INDEX = "https://pypi.eng.aws.tenstorrent.com/"
 #   pip install -e ".[tt]" --extra-index-url https://pypi.eng.aws.tenstorrent.com/
 #   pip install -e ".[all]" --extra-index-url https://pypi.eng.aws.tenstorrent.com/
 extra_requires = {
-    "base": ["torch"],
+    "base": [],
     "cpu": [],
     "cuda": [],
     "rocm": [],
@@ -67,6 +67,7 @@ if __name__ == "__main__":
             "torchcompat",
             "torchcompat.cli",
             "torchcompat.core",
+            "torchcompat.lazy",
             "torchcompat.plugins",
             "torchcompat.plugins.cuda",
             "torchcompat.plugins.rocm",
@@ -79,7 +80,6 @@ if __name__ == "__main__":
         setup_requires=["setuptools"],
         install_requires=[
             "importlib_resources",
-            "torch",
             "argklass>=1.4.4",
         ],
         entry_points={

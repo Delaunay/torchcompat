@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 try:
     from habana_frameworks.torch import hpu
@@ -134,10 +134,10 @@ class amp:
 
 
 def device_string(id: int):
-    
+
     return f"hpu:{id}"
 
- 
+
 def fetch_device(id: int):
     return torch.device("hpu", torch.hpu.current_device())
 
@@ -170,7 +170,7 @@ class accelerate:
             def backward(self, *args, **kwargs):
                 super.backward(*args, **kwargs)
                 htcore.mark_step()
-                
+
         return Custom(*args, **kwargs)
 
 

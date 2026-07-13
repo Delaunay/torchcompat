@@ -5,7 +5,7 @@ import time
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 impl = torch.cpu
 

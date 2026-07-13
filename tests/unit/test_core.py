@@ -42,7 +42,7 @@ def test_load_available_prefers_tt_over_xla(monkeypatch):
     cpu = types.SimpleNamespace(impl=types.SimpleNamespace(device_type="cpu"))
 
     monkeypatch.setattr(
-        "torchcompat.core.load.load_plugins",
+        "torchcompat.utils.load.load_plugins",
         lambda: {
             "torchcompat.plugins.cpu": cpu,
             "torchcompat.plugins.tt": tt,

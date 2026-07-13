@@ -5,7 +5,7 @@ import importlib
 import pytest
 
 import torchcompat.plugins
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 from torchcompat.core.load import discover_plugins, missing_backend_reason
 
 from tests.conftest import PLUGIN_SPECS, plugin_module_name

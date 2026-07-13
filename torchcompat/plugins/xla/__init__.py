@@ -5,9 +5,14 @@ import types
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 if os.environ.get("PJRT_DEVICE", "").upper() == "TT":
+    raise NotAvailable("Tenstorrent devices use the TT plugin")
+
+from torchcompat.plugins.tt.sysfs import list_sysfs_devices
+
+if list_sysfs_devices():
     raise NotAvailable("Tenstorrent devices use the TT plugin")
 
 try:

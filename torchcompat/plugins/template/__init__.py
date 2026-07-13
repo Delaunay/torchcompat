@@ -1,6 +1,6 @@
 """Plugin example"""
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 raise NotAvailable()
 

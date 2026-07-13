@@ -25,7 +25,7 @@ def ensure_libpython_on_path() -> None:
 
 ensure_libpython_on_path()
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.errors import NotAvailable
 
 PLUGIN_SPECS: dict[str, dict[str, Any]] = {
     "cpu": {"device_type": "cpu", "ccl": "gloo"},

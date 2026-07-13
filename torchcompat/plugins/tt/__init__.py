@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import os
 import re
+import time
 import types
 from typing import Dict, Optional, Sequence, Tuple
 
-from torchcompat.core.errors import NotAvailable
-from torchcompat.core.logs import log_root
+from torchcompat.utils.errors import NotAvailable
+from torchcompat.core.logs import prepare_tt_environment
 
 from .sysfs import (
     format_init_error,
@@ -71,8 +72,7 @@ sysfs_devices = list_sysfs_devices()
 if not sysfs_devices:
     raise NotAvailable(hardware_unavailable_message())
 
-LOG_PATH = log_root() / "tt" / "logger.txt"
-os.environ["TT_LOGGER_FILE"] = str(LOG_PATH)
+prepare_tt_environment()
 
 
 def __getattr__(name: str):
@@ -133,6 +133,21 @@ def _ensure_initialized() -> None:
         "tt_enable_torch_fx_fusion_pass": True,
         "tt_use_aot_autograd": True,
     }
+
+    class Event:
+        def __init__(self, **kwargs):
+            self.start = 0
+
+        def record(self):
+            self.synchronize()
+            self.start = time.time()
+
+        def elapsed_time(self, end):
+            # should return ms
+            return (end.start - self.start) * 1000
+
+        def synchronize(self):
+            synchronize()
 
     def fetch_device(id: int = 0):
         return xm.xla_device(id)
@@ -421,6 +436,7 @@ def _ensure_initialized() -> None:
     setattr(impl, "compile", compile)
     setattr(impl, "get_mesh", get_mesh)
     setattr(impl, "init_process_group", _init_process_group)
+    setattr(impl, "Event", Event)
 
     globals().update(
         {
