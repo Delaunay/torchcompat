@@ -23,7 +23,8 @@ def prepare_tt_environment() -> bool:
     This must run as early as possible on hosts with sysfs-visible TT devices so
     lazy imports configure logging and PJRT before the generic XLA plugin loads.
     """
-    from torchcompat.plugins.tt.sysfs import list_sysfs_devices
+    # Import via utils so non-TT hosts never execute plugins.tt package init.
+    from torchcompat.utils.tt_sysfs import list_sysfs_devices
 
     if not list_sysfs_devices():
         return False

@@ -11,7 +11,7 @@ def test_prepare_tt_environment_sets_logger(monkeypatch, tmp_path):
 
     monkeypatch.setenv("TORCHCOMPAT_LOG_DIR", str(tmp_path))
     monkeypatch.setattr(
-        "torchcompat.plugins.tt.sysfs.list_sysfs_devices",
+        "torchcompat.utils.tt_sysfs.list_sysfs_devices",
         lambda: [{"device_id": 0, "name": "tenstorrent!0"}],
     )
 
@@ -25,7 +25,7 @@ def test_prepare_tt_environment_no_hardware(monkeypatch):
 
     monkeypatch.delenv("PJRT_DEVICE", raising=False)
     monkeypatch.setattr(
-        "torchcompat.plugins.tt.sysfs.list_sysfs_devices",
+        "torchcompat.utils.tt_sysfs.list_sysfs_devices",
         lambda: [],
     )
 
@@ -38,7 +38,7 @@ def test_lazy_import_does_not_prepare_tt_environment(monkeypatch, tmp_path):
     monkeypatch.delenv("TT_LOGGER_FILE", raising=False)
     monkeypatch.setenv("TORCHCOMPAT_LOG_DIR", str(tmp_path))
     monkeypatch.setattr(
-        "torchcompat.plugins.tt.sysfs.list_sysfs_devices",
+        "torchcompat.utils.tt_sysfs.list_sysfs_devices",
         lambda: [{"device_id": 0, "name": "tenstorrent!0"}],
     )
 
@@ -50,18 +50,31 @@ def test_lazy_import_does_not_prepare_tt_environment(monkeypatch, tmp_path):
 
 
 def test_lazy_first_access_prepares_tt_environment(monkeypatch, tmp_path):
-    import types
+    from torchcompat.utils.device import Device
+
+    class _Stub(Device):
+        @property
+        def name(self) -> str:
+            return "tt"
+
+        @property
+        def device_type(self) -> str:
+            return "xla"
+
+        @property
+        def ccl(self) -> str:
+            return "xla"
 
     monkeypatch.delenv("PJRT_DEVICE", raising=False)
     monkeypatch.delenv("TT_LOGGER_FILE", raising=False)
     monkeypatch.setenv("TORCHCOMPAT_LOG_DIR", str(tmp_path))
     monkeypatch.setattr(
-        "torchcompat.plugins.tt.sysfs.list_sysfs_devices",
+        "torchcompat.utils.tt_sysfs.list_sysfs_devices",
         lambda: [{"device_id": 0, "name": "tenstorrent!0"}],
     )
     monkeypatch.setattr(
         "torchcompat.utils.load.load_available",
-        lambda ensure=None: types.SimpleNamespace(device_type="tt", ccl="xla"),
+        lambda ensure=None: _Stub(),
     )
 
     sys.modules.pop("torchcompat.lazy", None)
@@ -77,7 +90,7 @@ def test_xla_plugin_skips_when_tt_sysfs_present(monkeypatch):
     import importlib
 
     monkeypatch.setattr(
-        "torchcompat.plugins.tt.sysfs.list_sysfs_devices",
+        "torchcompat.utils.tt_sysfs.list_sysfs_devices",
         lambda: [{"device_id": 0, "name": "tenstorrent!0"}],
     )
 

@@ -1,54 +1,68 @@
-"""Plugin example"""
-
-import contextlib
-import time
+"""CPU compatibility layer."""
 
 import torch
 
-from torchcompat.utils.errors import NotAvailable
-
-impl = torch.cpu
+from torchcompat.utils.device import Event, TorchBackendDevice
 
 
-def set_enable_tf32(enable=True):
-    pass
+class CpuDevice(TorchBackendDevice):
+    def __init__(self):
+        super().__init__(torch.cpu)
 
+    @property
+    def name(self) -> str:
+        return "cpu"
 
-class Event:
-    def __init__(self, **kwargs):
-        self.start = 0
+    @property
+    def device_type(self) -> str:
+        return "cpu"
 
-    def record(self):
-        self.start = time.time()
+    @property
+    def ccl(self) -> str:
+        return "gloo"
 
-    def elapsed_time(self, end):
-        # should return ms
-        return (end.start - self.start) * 1000
+    def is_available(self) -> bool:
+        return True
 
-    def synchronize(self):
+    def device_count(self) -> int:
+        return 1
+
+    def set_device(self, device) -> None:
         pass
 
+    def synchronize(self, *args, **kwargs) -> None:
+        pass
 
-ccl = "gloo"
+    @property
+    def Event(self):
+        return Event
+
+    @property
+    def amp(self):
+        # Prefer float32 on CPU: autocast is opt-in (``enabled=True``) instead of
+        # the accelerator default where ``autocast()`` enables low precision.
+        class amp:
+            @staticmethod
+            def autocast(*args, enabled=False, device_type=None, **kwargs):
+                import torch
+
+                return torch.amp.autocast(
+                    device_type or "cpu", *args, enabled=enabled, **kwargs
+                )
+
+            @staticmethod
+            def GradScaler(*args, device=None, **kwargs):
+                import torch
+
+                return torch.amp.GradScaler(
+                    *args, device=device or "cpu", **kwargs
+                )
+
+        return amp
+
+    def compile(self, model, *args, backend=None, **kwargs):
+        # Default to eager on CPU — inductor compile is slow and rarely useful here.
+        return super().compile(model, *args, backend=backend or "eager", **kwargs)
 
 
-@contextlib.contextmanager
-def step():
-    yield
-
-
-def optimizer_step(optimizer, barrier=False, **kwargs):
-    return optimizer.step(**kwargs)
-
-
-def launch(fn, args=(), start_method="spawn", debug_single_process=False):
-    fn(0, *args)
-
-
-setattr(impl, "device_type", "cpu")
-setattr(impl, "set_enable_tf32", set_enable_tf32)
-setattr(impl, "ccl", ccl)
-setattr(impl, "Event", Event)
-setattr(impl, "step", step)
-setattr(impl, "optimizer_step", optimizer_step)
-setattr(impl, "launch", launch)
+impl = CpuDevice()

@@ -1,16 +1,18 @@
-"""XLA support for PyTorch (TPU, CPU, CUDA, Neuron, etc.)"""
+"""XLA support for PyTorch (TPU, CPU, CUDA, Neuron, etc.)."""
+
+from __future__ import annotations
 
 import os
-import types
 
 import torch
 
+from torchcompat.utils.device import Device
 from torchcompat.utils.errors import NotAvailable
 
 if os.environ.get("PJRT_DEVICE", "").upper() == "TT":
     raise NotAvailable("Tenstorrent devices use the TT plugin")
 
-from torchcompat.plugins.tt.sysfs import list_sysfs_devices
+from torchcompat.utils.tt_sysfs import list_sysfs_devices
 
 if list_sysfs_devices():
     raise NotAvailable("Tenstorrent devices use the TT plugin")
@@ -31,109 +33,127 @@ if not _devices:
     raise NotAvailable("No XLA devices available")
 
 
-impl = types.SimpleNamespace()
-_mesh = None
-ccl = "xla"
+class XlaDevice(Device):
+    def __init__(self):
+        self._mesh = None
 
+    @property
+    def name(self) -> str:
+        return "xla"
 
-def fetch_device(id: int = 0):
-    return torch_xla.device(id)
+    @property
+    def device_type(self) -> str:
+        return "xla"
 
+    @property
+    def ccl(self) -> str:
+        return "xla"
 
-def device_string(id: int = 0):
-    return f"xla:{id}"
+    def fetch_device(self, id: int | None = None):
+        if id is None:
+            from torchcompat.utils.device import local_rank
 
+            id = local_rank()
+        return torch_xla.device(id)
 
-def set_enable_tf32(enable=True):
-    pass
+    def device_string(self, id: int | None = None) -> str:
+        if id is None:
+            from torchcompat.utils.device import local_rank
 
+            id = local_rank()
+        return f"xla:{id}"
 
-def synchronize():
-    torch_xla.sync(wait=True)
+    def synchronize(self, *args, **kwargs) -> None:
+        torch_xla.sync(wait=True)
 
+    def mark_step(self) -> None:
+        torch_xla.sync()
 
-def mark_step():
-    torch_xla.sync()
+    def manual_seed(self, seed) -> None:
+        xm.set_rng_state(int(seed))
 
+    def manual_seed_all(self, seed) -> None:
+        seed = int(seed)
+        devices = xm.get_xla_supported_devices() or [None]
+        for device in devices:
+            xm.set_rng_state(seed, device)
 
-def optimizer_step(optimizer, barrier=False, **kwargs):
-    return xm.optimizer_step(optimizer, barrier=barrier, **kwargs)
+    def device_count(self) -> int:
+        return torch_xla.device_count()
 
+    def step(self):
+        return torch_xla.step()
 
-def compile(model, *args, backend=None, options=None, **kwargs):
-    compile_kwargs = dict(kwargs)
-    if options is not None:
-        torch_xla.set_custom_compile_options(options)
-        compile_kwargs["custom_compile_options"] = options
-    return torch_xla.compile(model, *args, **compile_kwargs)
+    def optimizer_step(self, optimizer, barrier: bool = False, **kwargs):
+        result = xm.optimizer_step(optimizer, barrier=barrier, **kwargs)
+        if not barrier:
+            self.mark_step()
+        return result
 
+    def launch(self, fn, args=(), start_method="spawn", debug_single_process=False):
+        return torch_xla.launch(
+            fn,
+            args=args,
+            start_method=start_method,
+            debug_single_process=debug_single_process,
+        )
 
-def get_mesh():
-    return _mesh
+    def compile(self, model, *args, backend=None, options=None, **kwargs):
+        compile_kwargs = dict(kwargs)
+        if options is not None:
+            torch_xla.set_custom_compile_options(options)
+            compile_kwargs["custom_compile_options"] = options
+        return torch_xla.compile(model, *args, **compile_kwargs)
 
+    def get_mesh(self):
+        return self._mesh
 
-def _setup_multichip():
-    xr.use_spmd()
+    def _setup_multichip(self):
+        xr.use_spmd()
 
+    def _create_mesh(self, mesh_shape, axis_names):
+        import torch_xla.distributed.spmd as xs
 
-def _create_mesh(mesh_shape, axis_names):
-    import torch_xla.distributed.spmd as xs
+        device_ids = list(range(xr.global_runtime_device_count()))
+        return xs.Mesh(device_ids, tuple(mesh_shape), tuple(axis_names))
 
-    device_ids = list(range(xr.global_runtime_device_count()))
-    return xs.Mesh(device_ids, tuple(mesh_shape), tuple(axis_names))
-
-
-def init_process_group(
-    *args,
-    backend=None,
-    rank=-1,
-    world_size=-1,
-    mesh_shape=None,
-    mesh_axis_names=None,
-    auto_mesh=False,
-    **kwargs,
-):
-    global _mesh
-
-    num_devices = xr.global_runtime_device_count()
-    if mesh_shape is not None:
-        if mesh_axis_names is None:
-            raise ValueError("mesh_axis_names is required when mesh_shape is set")
-    elif auto_mesh and num_devices > 1:
-        mesh_shape = (1, num_devices)
-        mesh_axis_names = ("batch", "model")
-
-    if mesh_shape is not None:
-        _setup_multichip()
-        _mesh = _create_mesh(mesh_shape, mesh_axis_names)
-        return _mesh
-
-    # xla:// is registered by torch_xla as a custom rendezvous URL scheme.
-    # See torch_xla.distributed.xla_backend and _internal/rendezvous.py.
-    dist_kwargs = dict(kwargs)
-    dist_kwargs.setdefault("init_method", "xla://")
-    if rank != -1:
-        dist_kwargs["rank"] = rank
-    if world_size != -1:
-        dist_kwargs["world_size"] = world_size
-    torch.distributed.init_process_group(
+    def init_process_group(
+        self,
         *args,
-        backend=backend or ccl,
-        **dist_kwargs,
-    )
-    return None
+        backend=None,
+        rank=-1,
+        world_size=-1,
+        mesh_shape=None,
+        mesh_axis_names=None,
+        auto_mesh=False,
+        **kwargs,
+    ):
+        num_devices = xr.global_runtime_device_count()
+        if mesh_shape is not None:
+            if mesh_axis_names is None:
+                raise ValueError("mesh_axis_names is required when mesh_shape is set")
+        elif auto_mesh and num_devices > 1:
+            mesh_shape = (1, num_devices)
+            mesh_axis_names = ("batch", "model")
+
+        if mesh_shape is not None:
+            self._setup_multichip()
+            self._mesh = self._create_mesh(mesh_shape, mesh_axis_names)
+            return self._mesh
+
+        # xla:// is registered by torch_xla as a custom rendezvous URL scheme.
+        dist_kwargs = dict(kwargs)
+        dist_kwargs.setdefault("init_method", "xla://")
+        if rank != -1:
+            dist_kwargs["rank"] = rank
+        if world_size != -1:
+            dist_kwargs["world_size"] = world_size
+        torch.distributed.init_process_group(
+            *args,
+            backend=backend or self.ccl,
+            **dist_kwargs,
+        )
+        return None
 
 
-setattr(impl, "device_type", "xla")
-setattr(impl, "ccl", ccl)
-setattr(impl, "set_enable_tf32", set_enable_tf32)
-setattr(impl, "fetch_device", fetch_device)
-setattr(impl, "device_string", device_string)
-setattr(impl, "synchronize", synchronize)
-setattr(impl, "mark_step", mark_step)
-setattr(impl, "step", torch_xla.step)
-setattr(impl, "optimizer_step", optimizer_step)
-setattr(impl, "launch", torch_xla.launch)
-setattr(impl, "compile", compile)
-setattr(impl, "get_mesh", get_mesh)
-setattr(impl, "init_process_group", init_process_group)
+impl = XlaDevice()

@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PYTHON="/home/delaunap/workspace/.venv/bin/python"
-if [[ ! -x "${PYTHON}" ]]; then
-  PYTHON="$(command -v python3)"
-fi
+PYTHON="${PYTHON:-$(command -v python3)}"
 
 LIBDIR="$("${PYTHON}" -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")')"
 if [[ -n "${LIBDIR}" ]]; then

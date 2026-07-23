@@ -1,10 +1,14 @@
 """Plugin loading and backend selection for torchcompat."""
 
+from __future__ import annotations
+
 import importlib
 import os
 import pkgutil
 from functools import lru_cache
+from typing import Optional
 
+from .device import Device
 from .errors import NotAvailable
 
 missing_backend_reason = {}
@@ -27,7 +31,7 @@ def _plugin_short_name(module_name: str) -> str:
     return module_name.rsplit(".", 1)[-1]
 
 
-def _select_plugin_impl(plugins: dict, *, allow_cpu: bool = True):
+def _select_plugin_impl(plugins: dict, *, allow_cpu: bool = True) -> Optional[Device]:
     by_short = {_plugin_short_name(name): module for name, module in plugins.items()}
     for short_name in BACKEND_PRIORITY:
         if short_name == "cpu" and not allow_cpu:
@@ -36,9 +40,12 @@ def _select_plugin_impl(plugins: dict, *, allow_cpu: bool = True):
         if module is None:
             continue
         try:
-            return module.impl
+            impl = module.impl
         except Exception:
             continue
+        if not isinstance(impl, Device):
+            continue
+        return impl
     return None
 
 
@@ -144,16 +151,26 @@ def backend_status(*, respect_skip: bool = False) -> dict[str, dict]:
     for short_name in list_plugin_names():
         module_name = f"torchcompat.plugins.{short_name}"
         if module_name in plugins:
-            impl = plugins[module_name].impl
-            result = {
-                "ok": True,
-                "plugin": short_name,
-                "device_type": getattr(impl, "device_type", None),
-                "ccl": getattr(impl, "ccl", None),
-            }
-            if hasattr(impl, "fetch_device"):
-                result["device"] = str(impl.fetch_device(0))
-            results[short_name] = result
+            try:
+                impl = plugins[module_name].impl
+                result = {
+                    "ok": True,
+                    "plugin": short_name,
+                    "name": getattr(impl, "name", short_name),
+                    "device_type": getattr(impl, "device_type", None),
+                    "ccl": getattr(impl, "ccl", None),
+                }
+                # Prefer device_string — fetch_device can init PJRT/XLA.
+                if hasattr(impl, "device_string"):
+                    result["device"] = impl.device_string(0)
+                results[short_name] = result
+            except Exception as err:
+                results[short_name] = {
+                    "ok": False,
+                    "plugin": short_name,
+                    "error": str(err),
+                    "kind": type(err).__name__,
+                }
             continue
 
         err = errors.get(module_name)
@@ -184,13 +201,13 @@ def load_plugins():
 
 
 @lru_cache
-def load_device(ensure=None):
+def load_device(ensure=None) -> Device:
     """Load a compute device, CPU is not valid.
 
     Arguments
     ---------
     ensure: optional, str
-        name of the expected backend (xpu, cuda, hpu, rocm)
+        name of the expected backend (xpu, cuda, hpu, rocm, tt, xla)
         if the backend do not match raise
 
     """
@@ -204,19 +221,35 @@ def load_device(ensure=None):
         explain_errors()
 
     if ensure is not None:
-        assert impl.device_type == ensure
+        _assert_backend(impl, ensure)
 
     return impl
 
 
+def _backend_matches(impl: Device, ensure: str) -> bool:
+    """Match plugin identity (``name``) or PyTorch device type (``device_type``).
+
+    Tenstorrent uses ``name="tt"`` with ``device_type="xla"`` (ROCm-style:
+    plugin identity vs what ``torch.device`` / ``Generator`` accept).
+    """
+    return ensure in (impl.name, impl.device_type)
+
+
+def _assert_backend(impl: Device, ensure: str) -> None:
+    assert _backend_matches(impl, ensure), (
+        f"expected backend {ensure!r}, got name={impl.name!r} "
+        f"device_type={impl.device_type!r}"
+    )
+
+
 @lru_cache
-def load_available(ensure=None):
+def load_available(ensure=None) -> Device:
     """Load the fastest available compute device, fallsback to CPU
 
     Arguments
     ---------
     ensure: optional, str
-        name of the expected backend (xpu, cuda, hpu, rocm)
+        name of the expected backend (xpu, cuda, hpu, rocm, tt, xla)
         if the backend do not match raise
 
     """
@@ -226,7 +259,7 @@ def load_available(ensure=None):
         explain_errors()
 
     if ensure is not None:
-        assert impl.device_type == ensure
+        _assert_backend(impl, ensure)
 
     return impl
 

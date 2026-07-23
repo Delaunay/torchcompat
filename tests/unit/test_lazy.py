@@ -58,7 +58,7 @@ def test_lazy_loads_backend_on_first_attribute_access(monkeypatch):
     assert lazy.step is not None
     assert called["count"] == 1
     assert lazy._tc_device_loaded is True
-    assert lazy.device_module.device_type == "cpu"
+    assert lazy.device.device_type == "cpu"
 
 
 def test_lazy_exports_same_api_as_core():
@@ -67,6 +67,7 @@ def test_lazy_exports_same_api_as_core():
     lazy = _reload_lazy()
 
     for name in (
+        "device",
         "device_module",
         "step",
         "optimizer_step",
@@ -76,10 +77,14 @@ def test_lazy_exports_same_api_as_core():
         "mark_step",
         "synchronize",
         "init_process_group",
+        "init_mesh_group",
         "Event",
+        "get_mesh",
+        "prepare_batch",
     ):
         assert hasattr(lazy, name), name
         assert callable(getattr(lazy, name)) or name in (
+            "device",
             "device_module",
             "Event",
         )
@@ -87,7 +92,7 @@ def test_lazy_exports_same_api_as_core():
     with lazy.step():
         pass
 
-    assert lazy.device_module.device_type == core.device_module.device_type
+    assert lazy.device.device_type == core.device.device_type
 
 
 def test_lazy_device_string_triggers_load(monkeypatch):

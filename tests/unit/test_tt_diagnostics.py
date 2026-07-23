@@ -6,9 +6,8 @@ import pytest
 SYSFS_PATH = (
     Path(__file__).resolve().parents[2]
     / "torchcompat"
-    / "plugins"
-    / "tt"
-    / "sysfs.py"
+    / "utils"
+    / "tt_sysfs.py"
 )
 
 

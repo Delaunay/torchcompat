@@ -25,36 +25,21 @@ def ensure_libpython_on_path() -> None:
 
 ensure_libpython_on_path()
 
+from torchcompat.utils.device import Device
 from torchcompat.utils.errors import NotAvailable
 
 PLUGIN_SPECS: dict[str, dict[str, Any]] = {
-    "cpu": {"device_type": "cpu", "ccl": "gloo"},
-    "cuda": {"device_type": "cuda", "ccl": "nccl"},
-    "rocm": {"device_type": "cuda", "ccl": "nccl"},
-    "xpu": {"device_type": "xpu", "ccl": "ccl"},
-    "gaudi": {"device_type": "hpu", "ccl": "hccl"},
-    "xla": {"device_type": "xla", "ccl": "xla"},
-    "tt": {"device_type": "tt", "ccl": "xla"},
+    "cpu": {"device_type": "cpu", "name": "cpu", "ccl": "gloo"},
+    "cuda": {"device_type": "cuda", "name": "cuda", "ccl": "nccl"},
+    "rocm": {"device_type": "cuda", "name": "rocm", "ccl": "nccl"},
+    "xpu": {"device_type": "xpu", "name": "xpu", "ccl": "ccl"},
+    "gaudi": {"device_type": "hpu", "name": "gaudi", "ccl": "hccl"},
+    "xla": {"device_type": "xla", "name": "xla", "ccl": "xla"},
+    "tt": {"device_type": "xla", "name": "tt", "ccl": "xla"},
 }
 
-UNIFIED_API = (
-    "device_type",
-    "ccl",
-    "step",
-    "optimizer_step",
-    "launch",
-    "set_enable_tf32",
-)
-
-OPTIONAL_API = (
-    "fetch_device",
-    "device_string",
-    "mark_step",
-    "synchronize",
-    "compile",
-    "init_process_group",
-    "get_mesh",
-)
+# Full Device surface — extras always present via base defaults.
+UNIFIED_API = Device.PUBLIC_ATTRS
 
 
 def plugin_module_name(plugin_name: str) -> str:

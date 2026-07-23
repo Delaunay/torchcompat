@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from argklass.command import Command
 
-from torchcompat.plugins.tt.sysfs import (
+from torchcompat.utils.tt_sysfs import (
     format_sysfs_summary,
     hugepage_status,
     list_sysfs_devices,
