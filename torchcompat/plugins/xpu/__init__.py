@@ -1,9 +1,11 @@
-"""Intel XPU support for pytorch"""
+"""Intel XPU support for pytorch."""
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.device import TorchBackendDevice
+from torchcompat.utils.errors import NotAvailable
 
+ipex = None
 if not hasattr(torch, "xpu"):
     try:
         import intel_extension_for_pytorch as ipex
@@ -15,23 +17,6 @@ if not torch.xpu.is_available():
     raise NotAvailable("torch.xpu is not available")
 
 
-impl = torch.xpu
-
-
-def set_enable_tf32(enable=True):
-    if enable:
-        ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
-    else:
-        ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
-
-
-# https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
-ccl = "ccl"
-
-
-#
-# XPU does NOT implement amp.GradScaler
-#
 class NoScale:
     def __init__(self, enabled=True) -> None:
         pass
@@ -46,9 +31,32 @@ class NoScale:
         pass
 
 
-if not hasattr(impl.amp, "GradScaler"):
-    setattr(impl.amp, "GradScaler", NoScale)
+class XpuDevice(TorchBackendDevice):
+    def __init__(self):
+        super().__init__(torch.xpu)
+        if not hasattr(self._backend.amp, "GradScaler"):
+            self._backend.amp.GradScaler = NoScale
 
-setattr(impl, "device_type", "xpu")
-setattr(impl, "set_enable_tf32", set_enable_tf32)
-setattr(impl, "ccl", ccl)
+    @property
+    def name(self) -> str:
+        return "xpu"
+
+    @property
+    def device_type(self) -> str:
+        return "xpu"
+
+    @property
+    def ccl(self) -> str:
+        # https://github.com/intel/torch-ccl?tab=readme-ov-file#usage
+        return "ccl"
+
+    def set_enable_tf32(self, enable: bool = True) -> None:
+        if ipex is None:
+            return
+        if enable:
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.TF32)
+        else:
+            ipex.set_fp32_math_mode(device="xpu", mode=ipex.FP32MathMode.FP32)
+
+
+impl = XpuDevice()

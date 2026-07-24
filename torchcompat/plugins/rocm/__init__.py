@@ -1,8 +1,9 @@
-"""ROCm compatibility layer"""
+"""ROCm compatibility layer."""
 
 import torch
 
-from torchcompat.core.errors import NotAvailable
+from torchcompat.utils.device import TorchBackendDevice
+from torchcompat.utils.errors import NotAvailable
 
 if not torch.cuda.is_available():
     raise NotAvailable("torch.cuda is not available")
@@ -12,9 +13,21 @@ if not torch.version.hip:
     raise NotAvailable("torch.cuda is not rocm")
 
 
-impl = torch.cuda
+class RocmDevice(TorchBackendDevice):
+    def __init__(self):
+        super().__init__(torch.cuda)
 
-ccl = "nccl"
+    @property
+    def name(self) -> str:
+        return "rocm"
 
-setattr(impl, "device_type", "cuda")
-setattr(impl, "ccl", ccl)
+    @property
+    def device_type(self) -> str:
+        return "cuda"
+
+    @property
+    def ccl(self) -> str:
+        return "nccl"
+
+
+impl = RocmDevice()
