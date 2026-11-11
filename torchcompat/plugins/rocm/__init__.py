@@ -15,6 +15,13 @@ if not torch.version.hip:
 impl = torch.cuda
 
 ccl = "nccl"
+compile_backend = None
 
+
+def compile(model, backend=None, **kwargs):
+    return torch.compile(model, backend=backend, **kwargs)
+
+setattr(impl, "compile_backend", compile_backend)
+setattr(impl, "compile", compile)
 setattr(impl, "device_type", "cuda")
 setattr(impl, "ccl", ccl)

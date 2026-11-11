@@ -157,6 +157,17 @@ class accelerate:
         return Custom(*args, **kwargs)
 
 
+
+def compile(model, backend="hpu_backend", **kwargs):
+    if int(os.getenv("TORCHCOMPAT_COMPILE", "1")):
+        return torch.compile(model, backend=backend, **kwargs)
+    return model
+    
+compile_backend = "hpu_backend"
+
+
+setattr(impl, "compile_backend", compile_backend)
+setattr(impl, "compile", compile)
 setattr(impl, "accelerate", accelerate)
 setattr(impl, "device_string", device_string)
 setattr(impl, "device_type", "hpu")

@@ -101,6 +101,14 @@ def _make_amp():
 
 impl.amp = _make_amp()
 
+
+compile_backend = None
+
+def compile(model, backend=None, **kwargs):
+    return torch.compile(model, backend=backend, **kwargs)
+
+setattr(impl, "compile_backend", compile_backend)
+setattr(impl, "compile", compile)
 setattr(impl, "device_type", "xpu")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
 setattr(impl, "ccl", ccl)

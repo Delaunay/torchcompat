@@ -27,8 +27,14 @@ class Event:
     def synchronize(self):
         pass
 
+compile_backend = None
+
+def compile(model, backend=None, **kwargs):
+    return torch.compile(model, backend=backend, **kwargs)
 
 ccl = "gloo"
+setattr(impl, "compile_backend", compile_backend)
+setattr(impl, "compile", compile)
 setattr(impl, "device_type", "cpu")
 setattr(impl, "set_enable_tf32", set_enable_tf32)
 setattr(impl, "ccl", ccl)
